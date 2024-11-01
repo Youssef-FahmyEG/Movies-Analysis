@@ -47136,7 +47136,7 @@ INNER JOIN film_category
 ON film.film_id = film.film_id
 INNER JOIN category
 ON film_category.category_id = category.category_id
-GROUP BY category.name
+GROUP BY category.category_id
 ORDER BY Total_number_of_films DESC;
 
 -- Q2- What is the language most used for films?
@@ -47144,13 +47144,13 @@ SELECT COUNT(film.film_id) AS Total_films,language.name
 FROM film
 INNER JOIN language
 ON film.language_id = language.language_id
-GROUP BY name;
+GROUP BY language.language_id ;
 
 -- Q3- Which film Category has the highest revenue?
 SELECT category, total_sales
 FROM sales_by_film_category
 ORDER BY total_sales DESC
-LIMIT 1;
+LIMIT 1 ;
 
 -- Q4- Which film has the highest revenue?
 
@@ -47162,7 +47162,7 @@ INNER JOIN inventory
 ON rental.inventory_id = inventory.inventory_id
 INNER JOIN film
 ON inventory.film_id = film.film_id
-GROUP BY title
+GROUP BY film.film_id
 ORDER BY Total_Revenue DESC
 LIMIT 1;
 
@@ -47173,14 +47173,13 @@ INNER JOIN inventory
 ON film.film_id = inventory.film_id
 INNER JOIN rental
 ON inventory.inventory_id = rental.inventory_id
-GROUP BY film.title
+GROUP BY film.film_id
 ORDER BY number_of_rented_film DESC
 LIMIT 5;
 
--- Q6- Which stores have the highest revenue?
+-- Q6- What is the total revenue of each store?
 SELECT total_sales AS Total_store_sales,store 
-FROM sales_by_store
-ORDER BY total_sales DESC;
+FROM sales_by_store ;
 
 -- Q7- What is the average rental duration by film category?
 SELECT AVG(datediff(return_date,rental_date)) AS Average_rental_duration,category.name 
@@ -47193,14 +47192,14 @@ INNER JOIN film_category
 ON film.film_id = film_category.film_id
 INNER JOIN category
 ON category.category_id = film_category.category_id
-GROUP BY category.name;
+GROUP BY category.category_id;
 
 -- Q8- List the top 5 customers with the number of rented film.
 SELECT COUNT(rental.rental_id) AS number_of_rented_film,CONCAT(customer.first_name," ",customer.last_name) AS customer_name
 FROM rental
 INNER JOIN customer
 ON customer.customer_id = rental.customer_id
-GROUP BY customer_name
+GROUP BY customer.customer_id
 ORDER BY number_of_rented_film DESC
 LIMIT 5;
 
@@ -47221,14 +47220,14 @@ INNER JOIN city
 ON city.city_id = address.city_id
 INNER JOIN country 
 ON country.country_id = city.country_id
-GROUP BY country
+GROUP BY country.country_id
 ORDER BY number_of_rented_film DESC
-LIMIT 5;
+LIMIT 5 ;
 
 -- Q11- Which films have the highest average rating?
 SELECT AVG(film.rating) AS Average_rating,film.title
 FROM film
-GROUP BY title
+GROUP BY film.film_id
 ORDER BY Average_rating DESC;
 
 -- Q12- What is the average length of films in each category?
@@ -47238,7 +47237,7 @@ INNER JOIN film_category
 ON film.film_id = film_category.film_id
 INNER JOIN category
 ON film_category.category_id = category.category_id
-GROUP BY name;
+GROUP BY category.category_id;
 
 -- Q13- Which year and month generates the highest rental revenue?
 SELECT SUM(payment.amount) AS Total_revenue , YEAR(rental.rental_date) AS year , MONTH(rental.rental_date) AS month
@@ -47259,7 +47258,7 @@ INNER JOIN film_actor
 ON film.film_id = film_actor.film_id
 INNER JOIN actor
 ON film_actor.actor_id = actor.actor_id
-GROUP BY actor_name
+GROUP BY film_actor.actor_id
 ORDER BY Lowest_appearance_in_rented_films
 LIMIT 5 ;
 
@@ -47270,7 +47269,7 @@ INNER JOIN inventory
 ON film.film_id = inventory.film_id
 INNER JOIN rental
 ON inventory.inventory_id = rental.inventory_id
-GROUP BY title
+GROUP BY film.film_id
 HAVING Rented_film > 1;
 
 -- Q16- What is the average time between rentals for each customer?
@@ -47278,10 +47277,10 @@ SELECT AVG(datediff(rental.return_date,rental.rental_date)) AS Average_rental_du
 FROM rental
 INNER JOIN customer
 ON rental.customer_id = customer.customer_id
-GROUP BY Customer_name;
+GROUP BY customer.customer_id ;
 
 -- Q17- How many customers have rented films in multiple categories? 
-SELECT DISTINCT COUNT(customer.customer_id) AS Number_of_unique_customers, category.name
+SELECT DISTINCT COUNT(customer.customer_id) AS Number_of_unique_customers
 FROM customer
 INNER JOIN rental
 ON customer.customer_id = rental.customer_id
@@ -47293,8 +47292,7 @@ INNER JOIN film_category
 ON  film.film_id = film_category.film_id
 INNER JOIN category 
 ON film_category.category_id = category.category_id
-GROUP BY name
-HAVING Number_of_unique_customers > 1;
+HAVING COUNT(DISTINCT film_category.category_id) > 1 ;
 
 -- Q18- What is the total number of films rented per year?
 
@@ -47313,9 +47311,8 @@ INNER JOIN address
 ON customer.address_id = address.address_id
 INNER JOIN city
 ON address.city_id = city.city_id
-GROUP BY city
-ORDER BY Average_revenue_per_customer DESC;
-
+GROUP BY city.city_id
+ORDER BY Average_revenue_per_customer DESC ;
 
 -- Q20- Which customers who rented films in previous year have not rented any films in 2006?
 SELECT DISTINCT CONCAT(customer.first_name," ",customer.last_name) AS Customer_name
@@ -47323,4 +47320,58 @@ FROM customer
 WHERE customer.customer_id IN (SELECT DISTINCT rental.customer_id FROM rental WHERE YEAR(rental_date) = 2005) 
 AND
 customer.customer_id NOT IN (SELECT DISTINCT rental.customer_id FROM rental WHERE YEAR(rental_date) = 2006);
+
+-- Q21- What are the top 5 countries by number of customers?
+SELECT COUNT(customer.customer_id) AS Total_customers,country.country
+FROM customer
+INNER JOIN address
+ON customer.address_id = address.address_id
+INNER JOIN city
+ON address.city_id = city.city_id
+INNER JOIN country
+ON city.city_id = country.country_id
+GROUP BY country
+ORDER BY Total_customers DESC
+LIMIT 5 ;
+
+-- Q22- Which cities have the highest average payment per rented films?
+SELECT AVG(payment.amount) AS Average_payment,city.city
+FROM payment
+INNER JOIN rental
+ON payment.rental_id = rental.rental_id
+INNER JOIN customer 
+ON rental.customer_id = customer.customer_id
+INNER JOIN address
+ON customer.address_id = address.address_id
+INNER JOIN city
+ON address.city_id = city.city_id
+GROUP BY city.city_id
+ORDER BY Average_payment DESC ;
+
+-- Q23- Which staff members have processed the highest total payments?
+SELECT SUM(payment.amount) AS Total_payment,concat(staff.first_name," ",staff.last_name) AS Staff_fullname
+FROM payment
+INNER JOIN staff
+ON payment.staff_id = staff.staff_id
+GROUP BY staff.staff_id
+ORDER BY Total_payment DESC ;
+
+-- Q24-  Which customers who have not rented any films?
+SELECT CONCAT(customer.first_name, " ", customer.last_name) AS Customer_name
+FROM customer
+LEFT JOIN rental
+ON customer.customer_id = rental.customer_id
+WHERE rental.rental_id IS NULL ;
+
+-- Q25- What is the rank of each customer based on the total number of films rented, and how does it compare to the overall average number of rentals per customer?
+SELECT COUNT(rental.rental_id) AS Number_of_films_rented,
+AVG(COUNT(rental.rental_id)) OVER() AS Average_Rented_films,
+CONCAT(customer.first_name, ' ', customer.last_name) AS Customer_Name,
+RANK() OVER(ORDER BY COUNT(rental.rental_id) DESC) AS Film_rank
+FROM customer
+LEFT JOIN rental
+ON customer.customer_id = rental.customer_id
+LEFT JOIN payment
+ON rental.rental_id = payment.rental_id
+GROUP BY customer.customer_id ;
 
